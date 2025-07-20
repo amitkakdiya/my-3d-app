@@ -54,7 +54,7 @@ export default function Home() {
 
   const shapeKeyMap: Record<'RND' | 'OVL' | 'PRN', keyof typeof diamondMaterials> = {
     RND: 'RND',
-    OVL: 'OVL',
+    OVL: 'PRINCESS',
     PRN: 'PRINCESS'
   };
 
