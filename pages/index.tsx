@@ -1,115 +1,146 @@
-import Image from "next/image";
-import { Geist, Geist_Mono } from "next/font/google";
+// // // pages/index.tsx
+// // import { Canvas } from '@react-three/fiber'
+// // import { OrbitControls, Environment } from '@react-three/drei'
+// // import { Model } from '../components/Model'
 
-const geistSans = Geist({
-  variable: "--font-geist-sans",
-  subsets: ["latin"],
+// // export default function Home() {
+// //   return (
+// //     <div style={{ height: '100vh', width: '100vw' }}>
+// //       <Canvas>
+// //         <ambientLight intensity={0.5} />
+// //         <spotLight position={[10, 10, 10]} angle={0.15} penumbra={1} />
+// //         <pointLight position={[-10, -10, -10]} />
+        
+// //         <Model url="/path/to/your/model.glb" position={[0, -1, 0]} />
+// //         <OrbitControls />
+        
+// //         {/* Optional environment */}
+// //         <Environment preset="city" />
+// //       </Canvas>
+// //     </div>
+// //   )
+// // }
+
+// Add New Lighting and Environment
+// 📁 /pages/index.tsx
+
+'use client';
+
+import { useEffect, useRef, useState } from 'react';
+import { Canvas } from '@react-three/fiber';
+import { OrbitControls, useGLTF, Environment } from '@react-three/drei';
+import * as THREE from 'three';
+import { Leva, useControls } from 'leva';
+import { diamondMaterials } from '@/config/materials';
+
+
+const RND = diamondMaterials.RND;
+
+const diamondMaterial = new THREE.MeshPhysicalMaterial({
+  color: new THREE.Color(`#${RND.color}`),
+  metalness: 0,
+  roughness: 0,
+  transmission: 1,
+  transparent: true,
+  ior: RND.refractionIndex,
+  thickness: 0.5,
+  reflectivity: 1,
 });
 
-const geistMono = Geist_Mono({
-  variable: "--font-geist-mono",
-  subsets: ["latin"],
-});
+const metalMaterials: Record<string, THREE.MeshStandardMaterial> = {
+  yellow: new THREE.MeshStandardMaterial({ color: 0xffd700, metalness: 1, roughness: 0.2 }),
+  white: new THREE.MeshStandardMaterial({ color: 0xffffff, metalness: 1, roughness: 0.2 }),
+  rose: new THREE.MeshStandardMaterial({ color: 0xffc0cb, metalness: 1, roughness: 0.2 })
+};
+
+function JewelryModel({ metal }: { metal: string }) {
+  const { scene } = useGLTF('/models/ring.glb');
+
+  useEffect(() => {
+    scene.traverse((child) => {
+      if ((child as THREE.Mesh).isMesh) {
+        const mesh = child as THREE.Mesh;
+        const mat = mesh.material as THREE.Material;
+
+        if (mesh.name.toLowerCase().includes('gemcenter') ||
+          (mat as any)?.transmission > 0.8 ||
+          (mat as any)?.ior >= 2.0) {
+          mesh.material = diamondMaterial;
+          console.log('🔹 Assigned Diamond Material to', mesh.name);
+        }
+
+        if (mesh.name.toLowerCase().includes('gemcenter') ||
+          (mat as any)?.transmission > 0.8 ||
+          (mat as any)?.ior >= 2.0) {
+          mesh.material = diamondMaterial;
+          console.log('🔹 Assigned Diamond Material to', mesh.name);
+        }
+
+        if (mesh.name.toLowerCase().includes('diamond') ||
+          (mat as any)?.transmission > 0.8 ||
+          (mat as any)?.ior >= 2.0) {
+          mesh.material = diamondMaterial;
+        } else {
+           mesh.material = metalMaterials[metal];
+           console.log('🔸 Assigned Metal Material to', mesh.name);
+        }
+      }
+    });
+  }, [scene, metal]);
+
+  return <primitive object={scene} />;
+}
 
 export default function Home() {
+  const [metal, setMetal] = useState('yellow');
+
+  const { environment, ambientIntensity, directIntensity, exposure } = useControls('Lighting', {
+    environment: {
+      options: ['studio', 'sunset', 'city', 'dawn', 'night', 'forest', 'apartment', 'warehouse'],
+      value: 'studio',
+    },
+    ambientIntensity: { value: 0.3, min: 0, max: 2, step: 0.1 },
+    directIntensity: { value: 2.5, min: 0, max: 5, step: 0.1 },
+    exposure: { value: 1, min: 0.1, max: 3, step: 0.1 },
+  });
+
   return (
-    <div
-      className={`${geistSans.className} ${geistMono.className} font-sans grid grid-rows-[20px_1fr_20px] items-center justify-items-center min-h-screen p-8 pb-20 gap-16 sm:p-20`}
-    >
-      <main className="flex flex-col gap-[32px] row-start-2 items-center sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={180}
-          height={38}
-          priority
-        />
-        <ol className="font-mono list-inside list-decimal text-sm/6 text-center sm:text-left">
-          <li className="mb-2 tracking-[-.01em]">
-            Get started by editing{" "}
-            <code className="bg-black/[.05] dark:bg-white/[.06] font-mono font-semibold px-1 py-0.5 rounded">
-              pages/index.tsx
-            </code>
-            .
-          </li>
-          <li className="tracking-[-.01em]">
-            Save and see your changes instantly.
-          </li>
-        </ol>
-        <div className="flex gap-4 items-center flex-col sm:flex-row">
-          <a
-            className="rounded-full border border-solid border-transparent transition-colors flex items-center justify-center bg-foreground text-background gap-2 hover:bg-[#383838] dark:hover:bg-[#ccc] font-medium text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 sm:w-auto"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=default-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={20}
-              height={20}
-            />
-            Deploy now
-          </a>
-          <a
-            className="rounded-full border border-solid border-black/[.08] dark:border-white/[.145] transition-colors flex items-center justify-center hover:bg-[#f2f2f2] dark:hover:bg-[#1a1a1a] hover:border-transparent font-medium text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 w-full sm:w-auto md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=default-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Read our docs
-          </a>
-        </div>
-      </main>
-      <footer className="row-start-3 flex gap-[24px] flex-wrap items-center justify-center">
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=default-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/file.svg"
-            alt="File icon"
-            width={16}
-            height={16}
-          />
-          Learn
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=default-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/window.svg"
-            alt="Window icon"
-            width={16}
-            height={16}
-          />
-          Examples
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org?utm_source=create-next-app&utm_medium=default-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/globe.svg"
-            alt="Globe icon"
-            width={16}
-            height={16}
-          />
-          Go to nextjs.org →
-        </a>
-      </footer>
+    <div style={{ height: '100vh', width: '100vw' }}>
+      <Leva collapsed />
+      <div style={{ position: 'absolute', zIndex: 10, top: 10, left: 10, background: '#fff', padding: 10 }}>
+        <label>
+          Metal Color:{' '}
+          <select value={metal} onChange={(e) => setMetal(e.target.value)}>
+            <option value="yellow">Yellow Gold</option>
+            <option value="white">White Gold</option>
+            <option value="rose">Rose Gold</option>
+          </select>
+        </label>
+      </div>
+
+      {/* <Canvas camera={{ position: [0, 2, 4], fov: 45 }} gl={{ toneMappingExposure: exposure }} shadows>
+        <ambientLight intensity={ambientIntensity} />
+        <directionalLight position={[5, 10, 7.5]} intensity={directIntensity} />
+        <Environment preset={environment as any} background />
+        <OrbitControls enableDamping />
+        <JewelryModel metal={metal} />
+      </Canvas> */}
+
+      <Canvas camera={{ position: [0, 2, 4], fov: 45 }} 
+      gl={{ toneMappingExposure: exposure }} shadows>
+  <ambientLight intensity={ambientIntensity} />
+  <directionalLight position={[5, 10, 7.5]} intensity={directIntensity} />
+  <Environment preset={environment as any} background />
+  <OrbitControls enableDamping autoRotate={true} autoRotateSpeed={0.5} />
+  <JewelryModel metal={metal} />
+   <ambientLight intensity={ambientIntensity} />
+        <directionalLight position={[5, 10, 7.5]} intensity={directIntensity} />
+        <Environment preset={environment as any} background />
+        <OrbitControls enableDamping />
+        <JewelryModel metal={metal} />
+</Canvas>
     </div>
   );
 }
+
+useGLTF.preload('/models/ring.glb');
